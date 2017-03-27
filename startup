@@ -4,7 +4,12 @@ Then in the Startup.cs of your WebApi project add
 config.EnableSwagger(c => c.SingleApiVersion("v1", "A title for your API"))
         .EnableSwaggerUi();
 
-Cors
+<Attribute Routing>
+In the Startup.cs of your WebApi project add
+  // Web API routes
+  config.MapHttpAttributeRoutes();
+
+<Cors>
 Nuget:
 using System.Web.Http.Cors;
 *Controller.cs
