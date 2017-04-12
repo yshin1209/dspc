@@ -1,0 +1,81 @@
+
+arduino.js
+// arduino.js
+// Yong-Jun Shin (yshin@engr.uconn.edu)
+// UCONN Computational and Systems Medicine Lab (csml.uconn.edu), 2016
+var five = require("johnny-five"), board = new five.Board();
+
+var io = require('socket.io')(8000);
+
+board.on("ready", function() {
+
+    // Create a new BioMEMS sensor (photoresistor) instance.
+    sensor = new five.Sensor({
+        pin: "A0", // Arduino analog input pin number
+        freq: 1000  // Sampling frequency (500 milliseconds = 2 Hz)
+    });
+
+    // When a new sensor value is avaiable ("data"), execute {}
+    sensor.on("data", function() {
+        console.log(this.value); // Show the sensor value on Windows Command Shell
+        io.emit('sensorValue', this.value); //Send the sensor value named "sensorValue" to the web client (e.g., sensorValue: 300)
+    });
+
+    // Create a new BioMEMS actuator (LED) instance on pin 11
+    var actuator = new five.Led(11);
+    io.on('connection', function(socket){
+        // When the control value is received from the web client, execute {}
+        socket.on('control', function(controlValue){
+            actuator.brightness(controlValue); //Change the LED brightness to "controlValue"
+        });
+    });
+});
+
+
+
+
+client.html
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="author" content="Yong-Jun Shin (yshin@engr.uconn.edu)" />
+    <meta name="affiliation" content="UCONN Computational and Systems Medicine Lab (csml.uconn.edu), 2016" />
+    <title>Internet of BioMEMS</title>
+    <!--Script references. -->
+    <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
+    <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+    <script src="http://ajax.aspnetcdn.com/ajax/signalr/jquery.signalr-2.2.0.min.js"></script>
+</head>
+<body>
+    Photoresistor value: <div id="sensorValue"></div>
+    LED brightness: <div id="controlValue"></div>
+    <!--Add script to update the page and send messages.-->
+    <script type="text/javascript">
+      $(function () {
+        var socket = io.connect("http://localhost:8000");
+
+        socket.on('sensorValue', function (value) {
+            $('#sensorValue').text(value);
+
+            var dweetUrl = 'https://dweet.io/dweet/for/syj?senso='+value;
+            $.get( dweetUrl, function(response) 
+            {
+            });  
+            var newServiceId = 'control26';
+            var Kp = 0.1;
+            var Ki = 0;
+            var Kd = 0;
+            var targetIntensity = 400;
+            var url = 'http://csmlab8.uconn.edu/api/pid/' + newServiceId +'/' + value +'/'+ targetIntensity + '/'+ Kp + '/'+ Ki +'/'+ Kd;
+            $.get( url, function( response) 
+            {
+                response = 255;
+             $('#controlValue').text(response);
+             socket.emit('control', response);
+            });     
+        });
+      });
+    </script>
+  </body>
+</html>
