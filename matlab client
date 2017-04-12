@@ -1,0 +1,35 @@
+    clc
+    clear all
+
+    N = 63;  % number of iteration
+    x = zeros(N,1);  % measured data x
+    c = zeros(N,1);  % control signal u
+    r = 60*sin(-pi:0.1:pi)+ 200;  % reference (target) values
+    newServiceId = 's57';  % new web service ID 
+    Kp = num2str(2);  % proportional parameter Kp
+    Ki = num2str(2);  % integral parameter Ki
+    Kd = num2str(0.8);  % derivative paramter Kd
+    for n = 3:N 
+        % add disturbance (d) to x at time > 50
+        if  n>50 
+            d =60;
+        else
+            d = 0;
+        end  
+        x(n) = 0.4*c(n-1)+ 0.6*x(n-1) + d; % simulated system which takes control signal c as an input 
+                                           % and generates output data x
+        x_value = num2str(x(n));  % number to string conversion
+        r_value = num2str(r(n));  % number to string conversion
+        url = ['http://csmlab8.uconn.edu/api/pid/' newServiceId '/' x_value '/' r_value '/' Kp  '/' Ki '/' Kd];
+        c(n) =webread(url); % call PID web service which returns control signal c(i)
+    end
+    figure
+    plot (1:N, r, 'r', 1:N, x, 'b', 1:N, c, 'g')  % plot r, x, and c
+    legend('r (reference)', 'x (output)', 'c (control)')
+    xlabel ('time (n)');
+    ylabel ('magnitude (arbitrary unit)')
+    axis([0 63 0 450])
+   
+
+    
+    
